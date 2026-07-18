@@ -15,7 +15,8 @@ namespace TerraRenderer.Rendering;
 public sealed class EarthRenderer
 {
     private static readonly LightingPipeline LightingPipeline = new(
-        new LegacySurfaceLightingStage());
+        new LegacySurfaceLightingStage(),
+        new AdaptiveReliefLightingStage(ReliefSettings.Disabled));
 
     public void Render(EarthMaterialAtlas atlas, string outputPath, RenderRequest request)
     {
