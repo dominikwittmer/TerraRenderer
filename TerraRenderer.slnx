@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/TerraRenderer.Core/TerraRenderer.Core.csproj" />
+  <Project Path="src/TerraRenderer.Assets/TerraRenderer.Assets.csproj" />
+  <Project Path="src/TerraRenderer.Rendering/TerraRenderer.Rendering.csproj" />
+  <Project Path="src/TerraRenderer.Cli/TerraRenderer.Cli.csproj" />
+  <Project Path="src/TerraRenderer.AssetBuilder/TerraRenderer.AssetBuilder.csproj" />
+</Solution>

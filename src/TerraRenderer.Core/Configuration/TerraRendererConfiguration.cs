@@ -1,0 +1,103 @@
+namespace TerraRenderer.Core.Configuration;
+
+public sealed class TerraRendererConfiguration
+{
+    public string DateUtc { get; set; } = "2026-07-18";
+    public int FrameIntervalMinutes { get; set; } = 10;
+    public string DefaultLayout { get; set; } = "both";
+    public AssetConfiguration Assets { get; set; } = new();
+    public Dictionary<string, LayoutConfiguration> Layouts { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public RenderingConfiguration Rendering { get; set; } = new();
+}
+
+public sealed class AssetConfiguration
+{
+    public string DayTexture { get; set; } = "assets/textures/earth_day.jpg";
+    public string NightTexture { get; set; } = "assets/textures/earth_night.jpg";
+    public string? ElevationTexture { get; set; }
+    public string? WaterMaskTexture { get; set; }
+    public string? IceMaskTexture { get; set; }
+    public string? NormalTexture { get; set; }
+    public string? MaterialTexture { get; set; }
+    public string? AmbientOcclusionTexture { get; set; }
+    public string? NightBloomTexture { get; set; }
+}
+
+public sealed class LayoutConfiguration
+{
+    public int Width { get; set; } = 466;
+    public int Height { get; set; } = 466;
+
+    // The geographic point facing the camera. This is the visual composition target,
+    // not necessarily the user's physical location.
+    public double CenterLatitude { get; set; } = 37.0;
+    public double CenterLongitude { get; set; } = 15.0;
+
+    public string Projection { get; set; } = "perspective";
+    public double CameraDistance { get; set; } = 6.0;
+    public double FieldOfViewDegrees { get; set; } = 20.0;
+    public double CameraRollDegrees { get; set; }
+
+    // Retained for backwards-compatible orthographic layouts.
+    public double GlobeFill { get; set; } = 0.94;
+    public double GlobeOffsetX { get; set; }
+    public double GlobeOffsetY { get; set; }
+}
+
+public sealed class RenderingConfiguration
+{
+    public bool EnableRelief { get; set; } = true;
+    public bool EnableNightLights { get; set; } = true;
+    public bool EnableAtmosphere { get; set; } = true;
+    public bool EnableOceanSpecular { get; set; } = true;
+    public bool EnableToneMapping { get; set; } = true;
+    public double TwilightSoftness { get; set; } = 0.38;
+    public double TwilightBandWidth { get; set; } = 0.34;
+    public double TwilightSurfaceLift { get; set; } = 0.18;
+    public double DiffusePower { get; set; } = 0.78;
+    public double AmbientLight { get; set; } = 0.095;
+    public double HemisphereLight { get; set; } = 0.055;
+    public double ReliefStrength { get; set; } = 1.25;
+    public double ReliefSampleDegrees { get; set; } = 0.085;
+    public double NormalMapStrength { get; set; } = 0.72;
+    public double AmbientOcclusionStrength { get; set; } = 0.20;
+    public double NightLightStrength { get; set; } = 0.62;
+    public double NightLightGlow { get; set; } = 0.42;
+    public double NightLightBlurDegrees { get; set; } = 0.42;
+    public double NightLightFadeWidth { get; set; } = 0.18;
+    public double NightLightFadePower { get; set; } = 1.35;
+    public double OceanSpecularStrength { get; set; } = 0.24;
+    public double OceanSpecularPower { get; set; } = 82.0;
+    public double OceanFresnelStrength { get; set; } = 0.20;
+    public AtmosphereConfiguration Atmosphere { get; set; } = new();
+    public ToneMappingConfiguration ToneMapping { get; set; } = new();
+}
+
+public sealed class AtmosphereConfiguration
+{
+    public double Thickness { get; set; } = 0.030;
+    public double RayleighStrength { get; set; } = 0.70;
+    public double MieStrength { get; set; } = 0.16;
+    public double NightSideStrength { get; set; } = 0.012;
+    public double TerminatorBoost { get; set; } = 0.72;
+    public double SurfaceHazeStrength { get; set; } = 0.34;
+    public double SunsetWarmth { get; set; } = 0.12;
+    public double RadialFalloff { get; set; } = 4.4;
+    public double TerminatorWidth { get; set; } = 0.34;
+}
+
+public sealed class ToneMappingConfiguration
+{
+    public double Exposure { get; set; } = 1.04;
+    public double Contrast { get; set; } = 1.06;
+    public double Saturation { get; set; } = 1.055;
+    public double IceHighlightCompression { get; set; } = 0.34;
+    public double IceBlueShadow { get; set; } = 0.115;
+    public double OceanBlueBoost { get; set; } = 0.085;
+    public double OceanDarkening { get; set; } = 0.075;
+    public double VegetationBoost { get; set; } = 0.055;
+    public double DesertWarmth { get; set; } = 0.045;
+    public double PolarSuppression { get; set; } = 0.16;
+    public double ShadowLift { get; set; } = 0.018;
+    public double HighlightShoulder { get; set; } = 0.20;
+}

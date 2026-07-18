@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+output/**/*.png
+cache/
+.vs/
+assets/generated/*
+!assets/generated/.gitkeep

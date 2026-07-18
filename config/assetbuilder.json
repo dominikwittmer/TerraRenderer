@@ -1,0 +1,43 @@
+{
+  "sources": {
+    "dayAlbedo": "../assets/textures/earth_day.jpg",
+    "nightLights": "../assets/textures/earth_night.jpg",
+    "elevationGeoTiff": "D:/Data/TerraRenderer/ETOPO_2022_v1_30s_N90W180_bed.tif"
+  },
+  "output": {
+    "directory": "../assets/generated",
+    "width": 4096,
+    "height": 2048,
+    "jpegQuality": 94
+  },
+  "height": {
+    "minimumMeters": -11000.0,
+    "maximumMeters": 9000.0,
+    "normalStrength": 6.0,
+    "includeBathymetryInNormals": false,
+    "preFilterSigmaPixels": 1.15,
+    "curvatureStrength": 0.9,
+    "slopeReferenceDegrees": 35.0,
+    "ambientOcclusionStrength": 0.75,
+    "ambientOcclusionRadiusKm": 120.0,
+    "ambientOcclusionDirections": 8,
+    "ambientOcclusionSteps": 6,
+    "tileCacheCapacity": 384
+  },
+  "night": {
+    "blackPoint": 0.025,
+    "whitePoint": 0.72,
+    "gamma": 1.35,
+    "bloomThreshold": 0.12,
+    "bloomRadiusPixels": 5,
+    "warmRed": 255,
+    "warmGreen": 224,
+    "warmBlue": 168
+  },
+  "materials": {
+    "iceLatitudeStart": 55.0,
+    "iceBrightnessThreshold": 0.72,
+    "desertWarmthThreshold": 0.08,
+    "vegetationGreenThreshold": 0.025
+  }
+}

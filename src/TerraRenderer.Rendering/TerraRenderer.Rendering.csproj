@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../TerraRenderer.Core/TerraRenderer.Core.csproj" />
+    <ProjectReference Include="../TerraRenderer.Assets/TerraRenderer.Assets.csproj" />
+    <PackageReference Include="SkiaSharp" Version="4.148.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.148.0" />
+  </ItemGroup>
+</Project>
