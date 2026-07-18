@@ -147,6 +147,12 @@ public sealed class EarthRenderer
                 geometricNormal, config.ReliefSampleDegrees, config.ReliefStrength, config.NormalMapStrength)
             : geometricNormal;
 
+        var terrain = TerrainClassifier.Classify(
+            material,
+            normal,
+            geometricNormal,
+            coordinate.LatitudeDegrees);
+
         var emissionGlow = config.EnableNightLights
             ? atlas.SampleEmissionGlow(coordinate.LatitudeDegrees, coordinate.LongitudeDegrees,
                 config.NightLightBlurDegrees)
@@ -154,6 +160,7 @@ public sealed class EarthRenderer
 
         var lightingContext = new LightingContext(
             material,
+            terrain,
             emissionGlow,
             normal,
             geometricNormal,
