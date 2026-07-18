@@ -32,6 +32,8 @@ public sealed class EarthMaterialAtlas
     public bool UsesElevationTexture => _elevation is not null;
     public bool UsesNormalTexture => _normal is not null;
     public bool UsesMaterialTexture => _material is not null;
+    public bool UsesWaterMaskTexture => _waterMask is not null;
+    public bool UsesIceMaskTexture => _iceMask is not null;
     public bool UsesAmbientOcclusionTexture => _ambientOcclusion is not null;
 
     public EarthSurfaceMaterial Sample(double latitudeDegrees, double longitudeDegrees)
