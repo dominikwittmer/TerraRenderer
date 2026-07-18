@@ -6,6 +6,7 @@ using TerraRenderer.Core.Geometry;
 using TerraRenderer.Core.Projection;
 using TerraRenderer.Rendering.Atmosphere;
 using TerraRenderer.Rendering.Lighting;
+using TerraRenderer.Rendering.Lighting.Stages;
 using TerraRenderer.Rendering.Materials;
 using TerraRenderer.Rendering.ToneMapping;
 
@@ -13,6 +14,9 @@ namespace TerraRenderer.Rendering;
 
 public sealed class EarthRenderer
 {
+    private static readonly LightingPipeline LightingPipeline = new(
+        new LegacySurfaceLightingStage());
+
     public void Render(EarthMaterialAtlas atlas, string outputPath, RenderRequest request)
     {
         ArgumentNullException.ThrowIfNull(atlas);
@@ -148,7 +152,15 @@ public sealed class EarthRenderer
                 config.NightLightBlurDegrees)
             : SKColors.Black;
 
-        var color = SurfaceLighting.Shade(material, emissionGlow, normal, geometricNormal, sun, view, config);
+        var lightingContext = new LightingContext(
+            material,
+            emissionGlow,
+            normal,
+            geometricNormal,
+            sun,
+            view,
+            config);
+        var color = LightingPipeline.Shade(lightingContext);
         var limbShade = 0.80 + 0.20 * Math.Pow(limbCosine, 0.62);
         color = Scale(color, limbShade);
 

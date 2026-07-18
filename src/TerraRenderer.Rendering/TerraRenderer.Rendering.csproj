@@ -5,4 +5,7 @@
     <PackageReference Include="SkiaSharp" Version="4.148.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.148.0" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Lighting\Stages\" />
+  </ItemGroup>
 </Project>
