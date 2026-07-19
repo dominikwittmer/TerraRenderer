@@ -48,37 +48,15 @@ internal static class SurfaceLighting
             day += new HdrColor((float)(1.2 * strength), (float)(1.55 * strength), (float)(2.1 * strength));
         }
 
-        var nightMask = config.EnableNightLights
-            ? Math.Pow(1.0 - SmoothStep(-config.NightLightFadeWidth, config.NightLightFadeWidth, geometricIllumination), config.NightLightFadePower)
-            : 0.0;
-        var glow = material.Bloom.Red > 0 || material.Bloom.Green > 0 || material.Bloom.Blue > 0 ? material.Bloom : emissionGlow;
-        day += NightRadiance(material.Emission, glow, nightMask, config);
+        day += NightLightEngine.Evaluate(
+            material.Emission,
+            material.Bloom.Red > 0 || material.Bloom.Green > 0 || material.Bloom.Blue > 0
+                ? material.Bloom
+                : emissionGlow,
+            geometricIllumination,
+            config);
 
-        var nightAtmosphere = config.NightAtmosphereStrength * nightMask * (0.30 + 0.70 * Math.Pow(1.0 - ndotv, 1.8));
-        day += new HdrColor((float)(0.004 * nightAtmosphere), (float)(0.014 * nightAtmosphere), (float)(0.055 * nightAtmosphere));
         return day.ClampMinimum();
-    }
-
-    private static HdrColor NightRadiance(SKColor coreColor, SKColor glowColor, double nightMask, RenderingConfiguration config)
-    {
-        var coreLinear = HdrColor.FromSrgb(coreColor);
-        var glowLinear = HdrColor.FromSrgb(glowColor);
-        var source = Math.Max(coreLinear.Luminance, 0.92 * glowLinear.Luminance);
-        if (source <= 1e-8 || nightMask <= 1e-8) return HdrColor.Black;
-
-        // Preserve the source dynamic range instead of flattening it to a mask.
-        var compressed = Math.Pow(source, Math.Clamp(config.NightCompression, 0.45, 1.35));
-        var factor = config.NightLightStrength * config.NightCoreStrength * nightMask;
-        var core = Math.Pow(compressed, 1.65) * factor * 8.5;
-        var mid = Math.Pow(compressed, 0.82) * factor * 1.8;
-        var halo = Math.Pow(Math.Max(glowLinear.Luminance, source), 0.58) * factor * config.NightLightGlow * config.NightHaloStrength * 0.72;
-        var white = Math.Clamp(config.NightWhiteCore, 0, 1);
-        var warmth = Math.Clamp(config.NightWarmth, 0, 1);
-
-        return new HdrColor(
-            (float)(core * (0.92 + 0.08 * white) + mid * (1.05 + 0.12 * warmth) + halo * (1.08 + 0.18 * warmth)),
-            (float)(core * (0.78 + 0.22 * white) + mid * (0.78 + 0.17 * white) + halo * (0.61 + 0.20 * white)),
-            (float)(core * (0.48 + 0.52 * white) + mid * (0.32 + 0.38 * white) + halo * (0.16 + 0.24 * white)));
     }
 
     private static double SmoothStep(double a, double b, double v) { var t = Math.Clamp((v-a)/(b-a),0,1); return t*t*(3-2*t); }
