@@ -32,7 +32,7 @@ internal static class EarthAtmosphere
     }
 
     public static HdrColor ApplySurfaceHaze(HdrColor color, double sphereZ, double surfaceLight,
-        AtmosphereConfiguration config)
+        double surfaceHeight, double water, AtmosphereConfiguration config)
     {
         var mu = Math.Clamp(sphereZ, 0.0, 1.0);
         var limb = Math.Pow(1.0 - mu, 3.4);
@@ -41,18 +41,22 @@ internal static class EarthAtmosphere
             Math.Max(0.06, config.TerminatorWidth * 0.48), 2.0));
         var night = 1.0 - daylight;
 
-        var blue = limb * daylight * (config.SurfaceHazeStrength + 0.55 * config.LimbStrength);
+        var altitude = SmoothStep(0.18, 0.82, surfaceHeight) * (1.0 - Math.Clamp(water, 0.0, 1.0));
+        var lowland = 1.0 - altitude;
+        var depthWeight = 0.72 + 0.28 * lowland;
+        var blue = limb * daylight * (config.SurfaceHazeStrength + 0.55 * config.LimbStrength) * depthWeight;
         var warm = limb * terminator * config.SunsetGlowStrength * config.GoldenHourStrength
             * config.SunsetWarmth;
         var nightBlue = limb * night * config.NightLimbStrength;
 
         // Small extinction gives depth without washing out the surface.
-        var extinction = Math.Clamp(blue * 0.075 + warm * 0.025, 0.0, 0.12);
+        var aerialPerspective = daylight * lowland * Math.Pow(1.0 - mu, 1.7) * config.SurfaceHazeStrength;
+        var extinction = Math.Clamp(blue * 0.075 + warm * 0.025 + aerialPerspective * 0.020, 0.0, 0.13);
         color *= 1.0 - extinction;
         color += new HdrColor(
-            (float)(0.035 * blue + 0.62 * warm + 0.003 * nightBlue),
-            (float)(0.16 * blue + 0.24 * warm + 0.009 * nightBlue),
-            (float)(0.66 * blue + 0.035 * warm + 0.040 * nightBlue));
+            (float)(0.035 * blue + 0.62 * warm + 0.003 * nightBlue + 0.010 * aerialPerspective),
+            (float)(0.16 * blue + 0.24 * warm + 0.009 * nightBlue + 0.026 * aerialPerspective),
+            (float)(0.66 * blue + 0.035 * warm + 0.040 * nightBlue + 0.060 * aerialPerspective));
         return color;
     }
 

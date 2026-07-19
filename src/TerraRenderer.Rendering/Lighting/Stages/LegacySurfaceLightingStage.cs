@@ -10,6 +10,7 @@ internal sealed class LegacySurfaceLightingStage : ILightingStage
     {
         result.Color = SurfaceLighting.Shade(
             context.Material,
+            context.Terrain,
             context.EmissionGlow,
             context.SurfaceNormal,
             context.GeometricNormal,

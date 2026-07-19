@@ -81,6 +81,15 @@ public sealed class RenderingConfiguration
     public double NightWarmth { get; set; } = 0.34;
     public double NightHaloStrength { get; set; } = 0.72;
     public double NightCompression { get; set; } = 0.64;
+
+    // Sprint 5 - daylight recovery. These controls are applied only to reflected
+    // daylight, before night emission is accumulated.
+    public double DaylightExposure { get; set; } = 1.18;
+    public double DaylightRedBalance { get; set; } = 1.035;
+    public double DaylightGreenBalance { get; set; } = 1.01;
+    public double DaylightBlueBalance { get; set; } = 0.94;
+    public double DaylightLandLift { get; set; } = 0.012;
+    public double DaylightOceanNeutralization { get; set; } = 0.30;
     public AdaptiveReliefConfiguration AdaptiveRelief { get; set; } = new();
     public CloudConfiguration Clouds { get; set; } = new();
     public PostProcessingConfiguration PostProcessing { get; set; } = new();
@@ -188,4 +197,6 @@ public sealed class PostProcessingConfiguration
     public int Supersampling { get; set; } = 1;
     public double SharpenStrength { get; set; } = 0.34;
     public double LocalContrast { get; set; } = 0.08;
+    public double DaylightStructure { get; set; } = 0.16;
+    public int DaylightStructureRadius { get; set; } = 5;
 }

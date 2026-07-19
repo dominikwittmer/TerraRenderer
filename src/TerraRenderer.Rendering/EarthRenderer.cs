@@ -160,6 +160,7 @@ public sealed class EarthRenderer
             normal,
             geometricNormal,
             coordinate.LatitudeDegrees);
+        material = SurfaceMaterialShading.Apply(material, terrain);
 
         var emissionGlow = config.EnableNightLights
             ? atlas.SampleEmissionGlow(coordinate.LatitudeDegrees, coordinate.LongitudeDegrees,
@@ -186,7 +187,8 @@ public sealed class EarthRenderer
         if (config.EnableAtmosphere)
         {
             var surfaceLight = Vector3d.Dot(geometricNormal, sun);
-            color = EarthAtmosphere.ApplySurfaceHaze(color, limbCosine, surfaceLight, config.Atmosphere);
+            color = EarthAtmosphere.ApplySurfaceHaze(color, limbCosine, surfaceLight,
+                material.Height, material.Water, config.Atmosphere);
         }
 
         return config.EnableToneMapping

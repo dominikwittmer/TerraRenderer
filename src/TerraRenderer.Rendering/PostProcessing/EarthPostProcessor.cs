@@ -17,7 +17,7 @@ internal static class EarthPostProcessor
         if(bloom.Enabled && bloom.Intensity>0) ApplyBloom(r,g,b,width,height,bloom);
         var output=ToneMap(r,g,b,width,height,tone,enableToneMapping);
         if(post.SharpenStrength<=0 && post.LocalContrast<=0) return output;
-        using(output) return Sharpen(output,post.SharpenStrength,post.LocalContrast);
+        using(output) return Sharpen(output, post);
     }
 
     private static SKBitmap ToneMap(float[] r,float[] g,float[] b,int width,int height,ToneMappingConfiguration tone,bool enabled)
@@ -71,16 +71,64 @@ internal static class EarthPostProcessor
         }return result;
     }
 
-    private static SKBitmap Sharpen(SKBitmap source,double strength,double localContrast)
+    private static SKBitmap Sharpen(SKBitmap source, PostProcessingConfiguration post)
     {
-        var output=new SKBitmap(source.Info);
-        for(var y=0;y<source.Height;y++)for(var x=0;x<source.Width;x++)
+        var width = source.Width;
+        var height = source.Height;
+        var count = width * height;
+        var luminance = new float[count];
+        var blurred = new float[count];
+
+        for (var y = 0; y < height; y++)
+        for (var x = 0; x < width; x++)
         {
-            var c=source.GetPixel(x,y);double ar=0,ag=0,ab=0,n=0;
-            for(var yy=Math.Max(0,y-1);yy<=Math.Min(source.Height-1,y+1);yy++)for(var xx=Math.Max(0,x-1);xx<=Math.Min(source.Width-1,x+1);xx++){var p=source.GetPixel(xx,yy);ar+=p.Red;ag+=p.Green;ab+=p.Blue;n++;}
-            ar/=n;ag/=n;ab/=n;var lum=.2126*c.Red+.7152*c.Green+.0722*c.Blue;var avg=.2126*ar+.7152*ag+.0722*ab;var local=(lum-avg)*localContrast;
-            output.SetPixel(x,y,new SKColor(ToByte(c.Red+(c.Red-ar)*strength+local),ToByte(c.Green+(c.Green-ag)*strength+local),ToByte(c.Blue+(c.Blue-ab)*strength+local),255));
-        }return output;
+            var c = source.GetPixel(x, y);
+            luminance[y * width + x] = (float)(0.2126 * c.Red + 0.7152 * c.Green + 0.0722 * c.Blue);
+        }
+
+        Array.Copy(luminance, blurred, count);
+        var structureRadius = Math.Clamp(post.DaylightStructureRadius, 2, 16);
+        BoxBlur(blurred, width, height, structureRadius, 1);
+
+        var output = new SKBitmap(source.Info);
+        for (var y = 0; y < height; y++)
+        for (var x = 0; x < width; x++)
+        {
+            var c = source.GetPixel(x, y);
+            double ar = 0, ag = 0, ab = 0, n = 0;
+            for (var yy = Math.Max(0, y - 1); yy <= Math.Min(height - 1, y + 1); yy++)
+            for (var xx = Math.Max(0, x - 1); xx <= Math.Min(width - 1, x + 1); xx++)
+            {
+                var p = source.GetPixel(xx, yy);
+                ar += p.Red;
+                ag += p.Green;
+                ab += p.Blue;
+                n++;
+            }
+
+            ar /= n;
+            ag /= n;
+            ab /= n;
+
+            var i = y * width + x;
+            var lum = luminance[i];
+            var local = (lum - (0.2126 * ar + 0.7152 * ag + 0.0722 * ab)) * post.LocalContrast;
+
+            // The structure pass is luminance-only and fades out in very dark pixels.
+            // That preserves Sprint 4's night lights while recovering broad terrain,
+            // cloud and ice detail on the illuminated hemisphere.
+            var daylightMask = SmoothStep(22.0, 105.0, lum);
+            var highlightProtection = 1.0 - SmoothStep(205.0, 250.0, lum);
+            var structure = (lum - blurred[i]) * post.DaylightStructure * daylightMask * highlightProtection;
+
+            output.SetPixel(x, y, new SKColor(
+                ToByte(c.Red + (c.Red - ar) * post.SharpenStrength + local + structure),
+                ToByte(c.Green + (c.Green - ag) * post.SharpenStrength + local + structure),
+                ToByte(c.Blue + (c.Blue - ab) * post.SharpenStrength + local + structure),
+                255));
+        }
+
+        return output;
     }
 
     private static void BoxBlur(float[] values,int width,int height,int radius,int passes){var temp=new float[values.Length];for(var p=0;p<passes;p++){BlurHorizontal(values,temp,width,height,radius);BlurVertical(temp,values,width,height,radius);}}
@@ -89,5 +137,6 @@ internal static class EarthPostProcessor
     private static double Reinhard(double x)=>x/(1+x);
     private static double AcesFitted(double x){const double a=2.51,b=.03,c=2.43,d=.59,e=.14;return Math.Clamp((x*(a*x+b))/(x*(c*x+d)+e),0,1);}
     private static double Lerp(double a,double b,double t)=>a+(b-a)*t;
+    private static double SmoothStep(double a,double b,double v){var t=Math.Clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);}
     private static byte ToByte(double v)=>(byte)Math.Clamp(Math.Round(v),0,255);
 }
