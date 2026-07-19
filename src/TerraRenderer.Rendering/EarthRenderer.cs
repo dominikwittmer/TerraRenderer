@@ -11,6 +11,7 @@ using TerraRenderer.Rendering.Lighting;
 using TerraRenderer.Rendering.Lighting.Stages;
 using TerraRenderer.Rendering.Materials;
 using TerraRenderer.Rendering.ToneMapping;
+using TerraRenderer.Rendering.Hdr;
 
 namespace TerraRenderer.Rendering;
 
@@ -28,9 +29,7 @@ public sealed class EarthRenderer
 
         var factor = Math.Clamp(request.Rendering.PostProcessing.Supersampling, 1, 4);
         var renderLayout = ScaleLayout(request.Layout, factor);
-        using var working = new SKBitmap(renderLayout.Width, renderLayout.Height,
-            SKColorType.Rgba8888, SKAlphaType.Premul);
-        working.Erase(SKColors.Black);
+        var working = new HdrFrame(renderLayout.Width, renderLayout.Height);
 
         var sunPosition = SunCalculator.Calculate(request.TimeUtc);
         var sun = ToCartesian(sunPosition.SubsolarLatitudeDegrees, sunPosition.SubsolarLongitudeDegrees);
@@ -51,7 +50,7 @@ public sealed class EarthRenderer
         data.SaveTo(stream);
     }
 
-    private static void RenderPerspective(SKBitmap output, EarthMaterialAtlas atlas, LayoutConfiguration layout,
+    private static void RenderPerspective(HdrFrame output, EarthMaterialAtlas atlas, LayoutConfiguration layout,
         RenderingConfiguration config, Vector3d sun, DateTimeOffset timeUtc)
     {
         var projection = new PerspectiveEarthProjection(layout.Width, layout.Height,
@@ -78,7 +77,7 @@ public sealed class EarthRenderer
                     var view = (ray.Origin - earthHit.Point).Normalize();
                     var limbCosine = Math.Clamp(Vector3d.Dot(earthHit.Normal, view), 0.0, 1.0);
                     var color = ShadeSurface(atlas, coordinate, earthHit.Normal, view, sun, limbCosine, config, timeUtc);
-                    output.SetPixel(x, y, color);
+                    output[x, y] = color;
                     continue;
                 }
 
@@ -94,12 +93,12 @@ public sealed class EarthRenderer
                 var altitude = Math.Clamp((radialDistance - 1.0) / config.Atmosphere.Thickness, 0.0, 1.0);
                 var edgeNormal = closestPoint.Normalize();
                 var edgeLight = Vector3d.Dot(edgeNormal, sun);
-                output.SetPixel(x, y, EarthAtmosphere.OuterGlow(altitude, edgeLight, config.Atmosphere));
+                output[x, y] = EarthAtmosphere.OuterGlow(altitude, edgeLight, config.Atmosphere);
             }
         }
     }
 
-    private static void RenderOrthographic(SKBitmap output, EarthMaterialAtlas atlas, LayoutConfiguration layout,
+    private static void RenderOrthographic(HdrFrame output, EarthMaterialAtlas atlas, LayoutConfiguration layout,
         RenderingConfiguration config, Vector3d sun, DateTimeOffset timeUtc)
     {
         var projection = new OrthographicProjection(layout.CenterLatitude, layout.CenterLongitude);
@@ -128,7 +127,7 @@ public sealed class EarthRenderer
                             var edgeNormal = ToCartesian(edgeCoordinate.LatitudeDegrees, edgeCoordinate.LongitudeDegrees);
                             var edgeLight = Vector3d.Dot(edgeNormal, sun);
                             var altitude = (distance - radius) / (outerRadius - radius);
-                            output.SetPixel(x, y, EarthAtmosphere.OuterGlow(altitude, edgeLight, config.Atmosphere));
+                            output[x, y] = EarthAtmosphere.OuterGlow(altitude, edgeLight, config.Atmosphere);
                         }
                     }
                     continue;
@@ -141,12 +140,12 @@ public sealed class EarthRenderer
                 var geometricNormal = ToCartesian(coordinate.LatitudeDegrees, coordinate.LongitudeDegrees);
                 var sphereZ = Math.Sqrt(Math.Max(0.0, 1.0 - nx * nx - ny * ny));
                 var color = ShadeSurface(atlas, coordinate, geometricNormal, view, sun, sphereZ, config, timeUtc);
-                output.SetPixel(x, y, color);
+                output[x, y] = color;
             }
         }
     }
 
-    private static SKColor ShadeSurface(EarthMaterialAtlas atlas, GeoCoordinate coordinate,
+    private static HdrColor ShadeSurface(EarthMaterialAtlas atlas, GeoCoordinate coordinate,
         Vector3d geometricNormal, Vector3d view, Vector3d sun, double limbCosine,
         RenderingConfiguration config, DateTimeOffset timeUtc)
     {
@@ -219,8 +218,5 @@ public sealed class EarthRenderer
         return new Vector3d(cosLat * Math.Cos(lon), cosLat * Math.Sin(lon), Math.Sin(lat));
     }
 
-    private static SKColor Scale(SKColor color, double factor) => new(
-        (byte)Math.Clamp(Math.Round(color.Red * factor), 0, 255),
-        (byte)Math.Clamp(Math.Round(color.Green * factor), 0, 255),
-        (byte)Math.Clamp(Math.Round(color.Blue * factor), 0, 255), 255);
+    private static HdrColor Scale(HdrColor color, double factor) => color * factor;
 }

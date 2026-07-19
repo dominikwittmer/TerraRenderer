@@ -1,4 +1,4 @@
-using SkiaSharp;
+using TerraRenderer.Rendering.Hdr;
 
 namespace TerraRenderer.Rendering.Lighting;
 
@@ -12,13 +12,11 @@ internal sealed class LightingPipeline
         _stages = stages;
     }
 
-    public SKColor Shade(in LightingContext context)
+    public HdrColor Shade(in LightingContext context)
     {
         var result = new LightingResult();
-
         foreach (var stage in _stages)
             stage.Apply(context, result);
-
         return result.Color;
     }
 }

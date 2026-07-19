@@ -1,8 +1,8 @@
-using SkiaSharp;
+using TerraRenderer.Rendering.Hdr;
 
 namespace TerraRenderer.Rendering.Lighting;
 
 internal sealed class LightingResult
 {
-    public SKColor Color { get; set; } = SKColors.Black;
+    public HdrColor Color { get; set; } = HdrColor.Black;
 }

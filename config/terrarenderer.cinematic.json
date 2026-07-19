@@ -43,7 +43,7 @@
     "reliefSampleDegrees": 0.06,
     "normalMapStrength": 0.82,
     "ambientOcclusionStrength": 0.24,
-    "nightLightStrength": 1.18,
+    "nightLightStrength": 1.28,
     "nightLightGlow": 0.72,
     "nightLightBlurDegrees": 0.38,
     "nightLightFadeWidth": 0.22,
@@ -100,7 +100,7 @@
       "goldenHourStrength": 0.82
     },
     "toneMapping": {
-      "exposure": 1.26,
+      "exposure": 1.08,
       "contrast": 1.12,
       "saturation": 1.05,
       "iceHighlightCompression": 0.74,
@@ -112,28 +112,28 @@
       "polarSuppression": 0.3,
       "shadowLift": 0.011,
       "highlightShoulder": 0.32,
-      "blackLevel": 0.017,
+      "blackLevel": 0.012,
       "whitePoint": 1.0,
       "acESStrength": 1.0,
       "displayGamma": 2.2
     },
     "bloom": {
       "enabled": true,
-      "threshold": 0.34,
-      "knee": 0.32,
-      "intensity": 0.76,
+      "threshold": 1.0,
+      "knee": 0.45,
+      "intensity": 0.58,
       "radius": 7.0,
       "wideRadius": 24.0,
-      "wideIntensity": 0.22,
-      "nightBoost": 1.55,
+      "wideIntensity": 0.16,
+      "nightBoost": 0.0,
       "warmth": 0.08
     },
-    "nightCoreStrength": 1.42,
+    "nightCoreStrength": 1.55,
     "nightBloomSoftness": 0.72,
     "nightAtmosphereStrength": 0.02,
     "nightWhiteCore": 0.94,
     "nightWarmth": 0.3,
-    "nightHaloStrength": 0.88,
-    "nightCompression": 0.78
+    "nightHaloStrength": 0.72,
+    "nightCompression": 0.92
   }
 }
