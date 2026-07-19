@@ -40,6 +40,8 @@ internal static class EarthAtmosphere
         var dayAmount = limb * daylight * config.SurfaceHazeStrength;
         var limbAmount = limb * config.LimbStrength * (0.30 + 0.70 * daylight);
         var nightAmount = limb * (1.0 - daylight) * config.NightLimbStrength;
+        var sunGlare = Math.Pow(Math.Max(0.0, surfaceLight), 4.0) * limb *
+                       config.HorizonGlowStrength * 0.12;
         var amount = Math.Clamp(dayAmount + limbAmount + nightAmount, 0.0, 0.28);
 
         var sunset = terminator * config.SunsetWarmth * config.SunsetGlowStrength;

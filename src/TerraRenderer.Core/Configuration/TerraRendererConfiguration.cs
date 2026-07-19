@@ -51,6 +51,8 @@ public sealed class RenderingConfiguration
     public bool EnableAtmosphere { get; set; } = true;
     public bool EnableOceanSpecular { get; set; } = true;
     public bool EnableToneMapping { get; set; } = true;
+    public bool EnableClouds { get; set; } = true;
+    public double SunLightStrength { get; set; } = 1.18;
     public double TwilightSoftness { get; set; } = 0.38;
     public double TwilightBandWidth { get; set; } = 0.34;
     public double TwilightSurfaceLift { get; set; } = 0.18;
@@ -76,6 +78,8 @@ public sealed class RenderingConfiguration
     public double NightBloomSoftness { get; set; } = 0.55;
     public double NightAtmosphereStrength { get; set; } = 0.035;
     public AdaptiveReliefConfiguration AdaptiveRelief { get; set; } = new();
+    public CloudConfiguration Clouds { get; set; } = new();
+    public PostProcessingConfiguration PostProcessing { get; set; } = new();
     public AtmosphereConfiguration Atmosphere { get; set; } = new();
     public ToneMappingConfiguration ToneMapping { get; set; } = new();
 }
@@ -138,4 +142,24 @@ public sealed class ToneMappingConfiguration
     public double PolarSuppression { get; set; } = 0.16;
     public double ShadowLift { get; set; } = 0.018;
     public double HighlightShoulder { get; set; } = 0.20;
+}
+
+public sealed class CloudConfiguration
+{
+    public double Coverage { get; set; } = 0.42;
+    public double Density { get; set; } = 0.58;
+    public double Scale { get; set; } = 2.8;
+    public double DetailScale { get; set; } = 8.5;
+    public double SpeedDegreesPerHour { get; set; } = 0.45;
+    public double DayBrightness { get; set; } = 0.72;
+    public double SilverLining { get; set; } = 0.34;
+    public double ShadowStrength { get; set; } = 0.13;
+    public double NightVisibility { get; set; } = 0.055;
+}
+
+public sealed class PostProcessingConfiguration
+{
+    public int Supersampling { get; set; } = 1;
+    public double SharpenStrength { get; set; } = 0.34;
+    public double LocalContrast { get; set; } = 0.08;
 }

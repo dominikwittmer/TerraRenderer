@@ -1,0 +1,59 @@
+{
+  "dateUtc": "2026-07-18",
+  "frameIntervalMinutes": 10,
+  "defaultLayout": "orthographic",
+  "assets": {
+    "dayTexture": "assets/generated/earth_albedo.jpg",
+    "nightTexture": "assets/generated/earth_night_emission.png",
+    "elevationTexture": "assets/generated/earth_height.png",
+    "waterMaskTexture": "assets/generated/earth_watermask.png",
+    "iceMaskTexture": null,
+    "normalTexture": "assets/generated/earth_normal.png",
+    "materialTexture": "assets/generated/earth_material.png",
+    "ambientOcclusionTexture": "assets/generated/earth_ambient_occlusion.png",
+    "nightBloomTexture": "assets/generated/earth_night_bloom.png"
+  },
+  "layouts": {
+    "orthographic": {
+      "width": 1200, "height": 1200, "projection": "orthographic",
+      "centerLatitude": 37.0, "centerLongitude": 15.0,
+      "globeFill": 0.95, "globeOffsetX": 0.0, "globeOffsetY": 0.0
+    }
+  },
+  "rendering": {
+    "enableRelief": true, "enableNightLights": true, "enableAtmosphere": true,
+    "enableOceanSpecular": true, "enableToneMapping": true, "enableClouds": true,
+    "sunLightStrength": 1.38,
+    "twilightSoftness": 0.39, "twilightBandWidth": 0.34, "twilightSurfaceLift": 0.20,
+    "diffusePower": 0.76, "ambientLight": 0.068, "hemisphereLight": 0.040,
+    "reliefStrength": 1.10, "reliefSampleDegrees": 0.060, "normalMapStrength": 0.82,
+    "ambientOcclusionStrength": 0.24,
+    "nightLightStrength": 0.88, "nightLightGlow": 0.54,
+    "nightLightBlurDegrees": 0.38, "nightLightFadeWidth": 0.20, "nightLightFadePower": 1.45,
+    "oceanSpecularStrength": 0.30, "oceanSpecularPower": 112.0, "oceanFresnelStrength": 0.18,
+    "oceanDepthStrength": 0.15, "oceanShelfTint": 0.11, "oceanLimbDarkening": 0.09,
+    "clouds": {
+      "coverage": 0.45, "density": 0.62, "scale": 3.1, "detailScale": 11.0,
+      "speedDegreesPerHour": 0.42, "dayBrightness": 0.84, "silverLining": 0.52,
+      "shadowStrength": 0.15, "nightVisibility": 0.060
+    },
+    "postProcessing": { "supersampling": 1, "sharpenStrength": 0.40, "localContrast": 0.075 },
+    "adaptiveRelief": { "enabled": true, "ridgeStrength": 0.22, "valleyStrength": 0.14,
+      "skyLight": 0.036, "ambientBounce": 0.011, "strength": 1.12,
+      "macroReliefStrength": 0.12, "rockContrast": 0.15 },
+    "atmosphere": {
+      "thickness": 0.023, "rayleighStrength": 0.52, "mieStrength": 0.15,
+      "nightSideStrength": 0.003, "terminatorBoost": 0.64, "surfaceHazeStrength": 0.21,
+      "sunsetWarmth": 0.14, "radialFalloff": 4.3, "terminatorWidth": 0.33,
+      "limbStrength": 0.29, "nightLimbStrength": 0.020,
+      "horizonGlowStrength": 0.42, "sunsetGlowStrength": 0.31
+    },
+    "toneMapping": {
+      "exposure": 1.12, "contrast": 1.06, "saturation": 1.065,
+      "iceHighlightCompression": 0.74, "iceBlueShadow": 0.10,
+      "oceanBlueBoost": 0.115, "oceanDarkening": 0.10,
+      "vegetationBoost": 0.045, "desertWarmth": 0.038,
+      "polarSuppression": 0.30, "shadowLift": 0.011, "highlightShoulder": 0.32
+    }
+  }
+}

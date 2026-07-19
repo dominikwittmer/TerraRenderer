@@ -15,11 +15,12 @@ internal static class SurfaceLighting
         var ndotv = Math.Max(0.0, Vector3d.Dot(normal, view));
 
         var dayMix = SmoothStep(-config.TwilightSoftness, config.TwilightSoftness, geometricIllumination);
-        var directLight = Math.Pow(Math.Max(0.0, illumination), config.DiffusePower);
+        var directLight = Math.Pow(Math.Max(0.0, illumination), config.DiffusePower) * config.SunLightStrength;
         var skyHemisphere = 0.5 + 0.5 * geometricNormal.Z;
         var hemisphere = config.HemisphereLight * (0.62 + 0.38 * skyHemisphere);
         var baseLight = config.AmbientLight + hemisphere;
         var diffuse = baseLight + (1.0 - baseLight) * directLight;
+        diffuse = Math.Min(diffuse, 1.42);
 
         var twilightBand = Math.Exp(-Math.Pow(geometricIllumination / config.TwilightBandWidth, 2.0));
         var twilightLift = config.TwilightSurfaceLift * twilightBand * (1.0 - 0.72 * dayMix);
@@ -55,7 +56,7 @@ internal static class SurfaceLighting
             var ndoth = Math.Max(0.0, Vector3d.Dot(normal, halfVector));
             var specular = Math.Pow(ndoth, config.OceanSpecularPower);
             var fresnel = 0.014 + config.OceanFresnelStrength * Math.Pow(1.0 - ndotv, 5.0);
-            var strength = (specular * config.OceanSpecularStrength + fresnel * 0.11) *
+            var strength = (specular * config.OceanSpecularStrength * config.SunLightStrength + fresnel * 0.11) *
                            dayMix * material.Water * Math.Max(0.0, illumination);
             day = Add(day, 136 * strength, 178 * strength, 232 * strength);
         }

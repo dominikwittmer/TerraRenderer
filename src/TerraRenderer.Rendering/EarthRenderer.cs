@@ -5,6 +5,8 @@ using TerraRenderer.Core.Configuration;
 using TerraRenderer.Core.Geometry;
 using TerraRenderer.Core.Projection;
 using TerraRenderer.Rendering.Atmosphere;
+using TerraRenderer.Rendering.Clouds;
+using TerraRenderer.Rendering.PostProcessing;
 using TerraRenderer.Rendering.Lighting;
 using TerraRenderer.Rendering.Lighting.Stages;
 using TerraRenderer.Rendering.Materials;
@@ -24,17 +26,22 @@ public sealed class EarthRenderer
         ArgumentException.ThrowIfNullOrWhiteSpace(outputPath);
         ArgumentNullException.ThrowIfNull(request);
 
-        using var output = new SKBitmap(request.Layout.Width, request.Layout.Height,
+        var factor = Math.Clamp(request.Rendering.PostProcessing.Supersampling, 1, 4);
+        var renderLayout = ScaleLayout(request.Layout, factor);
+        using var working = new SKBitmap(renderLayout.Width, renderLayout.Height,
             SKColorType.Rgba8888, SKAlphaType.Premul);
-        output.Erase(SKColors.Black);
+        working.Erase(SKColors.Black);
 
         var sunPosition = SunCalculator.Calculate(request.TimeUtc);
         var sun = ToCartesian(sunPosition.SubsolarLatitudeDegrees, sunPosition.SubsolarLongitudeDegrees);
 
         if (request.Layout.Projection.Equals("orthographic", StringComparison.OrdinalIgnoreCase))
-            RenderOrthographic(output, atlas, request.Layout, request.Rendering, sun);
+            RenderOrthographic(working, atlas, renderLayout, request.Rendering, sun, request.TimeUtc);
         else
-            RenderPerspective(output, atlas, request.Layout, request.Rendering, sun);
+            RenderPerspective(working, atlas, renderLayout, request.Rendering, sun, request.TimeUtc);
+
+        using var output = EarthPostProcessor.Finish(working, request.Layout.Width, request.Layout.Height,
+            request.Rendering.PostProcessing);
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputPath))!);
         using var image = SKImage.FromBitmap(output);
@@ -44,7 +51,7 @@ public sealed class EarthRenderer
     }
 
     private static void RenderPerspective(SKBitmap output, EarthMaterialAtlas atlas, LayoutConfiguration layout,
-        RenderingConfiguration config, Vector3d sun)
+        RenderingConfiguration config, Vector3d sun, DateTimeOffset timeUtc)
     {
         var projection = new PerspectiveEarthProjection(layout.Width, layout.Height,
             layout.CenterLatitude, layout.CenterLongitude, layout.CameraDistance,
@@ -69,7 +76,7 @@ public sealed class EarthRenderer
                     var coordinate = PerspectiveEarthProjection.ToGeoCoordinate(earthHit.Normal);
                     var view = (ray.Origin - earthHit.Point).Normalize();
                     var limbCosine = Math.Clamp(Vector3d.Dot(earthHit.Normal, view), 0.0, 1.0);
-                    var color = ShadeSurface(atlas, coordinate, earthHit.Normal, view, sun, limbCosine, config);
+                    var color = ShadeSurface(atlas, coordinate, earthHit.Normal, view, sun, limbCosine, config, timeUtc);
                     output.SetPixel(x, y, color);
                     continue;
                 }
@@ -92,7 +99,7 @@ public sealed class EarthRenderer
     }
 
     private static void RenderOrthographic(SKBitmap output, EarthMaterialAtlas atlas, LayoutConfiguration layout,
-        RenderingConfiguration config, Vector3d sun)
+        RenderingConfiguration config, Vector3d sun, DateTimeOffset timeUtc)
     {
         var projection = new OrthographicProjection(layout.CenterLatitude, layout.CenterLongitude);
         var view = ToCartesian(layout.CenterLatitude, layout.CenterLongitude);
@@ -132,7 +139,7 @@ public sealed class EarthRenderer
 
                 var geometricNormal = ToCartesian(coordinate.LatitudeDegrees, coordinate.LongitudeDegrees);
                 var sphereZ = Math.Sqrt(Math.Max(0.0, 1.0 - nx * nx - ny * ny));
-                var color = ShadeSurface(atlas, coordinate, geometricNormal, view, sun, sphereZ, config);
+                var color = ShadeSurface(atlas, coordinate, geometricNormal, view, sun, sphereZ, config, timeUtc);
                 output.SetPixel(x, y, color);
             }
         }
@@ -140,7 +147,7 @@ public sealed class EarthRenderer
 
     private static SKColor ShadeSurface(EarthMaterialAtlas atlas, GeoCoordinate coordinate,
         Vector3d geometricNormal, Vector3d view, Vector3d sun, double limbCosine,
-        RenderingConfiguration config)
+        RenderingConfiguration config, DateTimeOffset timeUtc)
     {
         var material = atlas.Sample(coordinate.LatitudeDegrees, coordinate.LongitudeDegrees);
         var normal = config.EnableRelief
@@ -172,6 +179,10 @@ public sealed class EarthRenderer
         var limbShade = 0.80 + 0.20 * Math.Pow(limbCosine, 0.62);
         color = Scale(color, limbShade);
 
+        if (config.EnableClouds)
+            color = ProceduralCloudLayer.Apply(color, material, coordinate.LatitudeDegrees,
+                coordinate.LongitudeDegrees, timeUtc, geometricNormal, sun, config.Clouds);
+
         if (config.EnableAtmosphere)
         {
             var surfaceLight = Vector3d.Dot(geometricNormal, sun);
@@ -182,6 +193,22 @@ public sealed class EarthRenderer
             ? EarthToneMapper.Apply(color, material, config.ToneMapping)
             : color;
     }
+
+
+    private static LayoutConfiguration ScaleLayout(LayoutConfiguration source, int factor) => new()
+    {
+        Width = source.Width * factor,
+        Height = source.Height * factor,
+        CenterLatitude = source.CenterLatitude,
+        CenterLongitude = source.CenterLongitude,
+        Projection = source.Projection,
+        CameraDistance = source.CameraDistance,
+        FieldOfViewDegrees = source.FieldOfViewDegrees,
+        CameraRollDegrees = source.CameraRollDegrees,
+        GlobeFill = source.GlobeFill,
+        GlobeOffsetX = source.GlobeOffsetX,
+        GlobeOffsetY = source.GlobeOffsetY
+    };
 
     private static Vector3d ToCartesian(double latitudeDegrees, double longitudeDegrees)
     {
