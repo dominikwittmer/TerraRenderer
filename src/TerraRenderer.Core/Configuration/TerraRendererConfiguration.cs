@@ -82,6 +82,7 @@ public sealed class RenderingConfiguration
     public PostProcessingConfiguration PostProcessing { get; set; } = new();
     public AtmosphereConfiguration Atmosphere { get; set; } = new();
     public ToneMappingConfiguration ToneMapping { get; set; } = new();
+    public BloomConfiguration Bloom { get; set; } = new();
 }
 
 public sealed class AdaptiveReliefConfiguration
@@ -142,6 +143,23 @@ public sealed class ToneMappingConfiguration
     public double PolarSuppression { get; set; } = 0.16;
     public double ShadowLift { get; set; } = 0.018;
     public double HighlightShoulder { get; set; } = 0.20;
+    public double BlackLevel { get; set; } = 0.006;
+    public double WhitePoint { get; set; } = 1.0;
+    public double AcESStrength { get; set; } = 1.0;
+    public double DisplayGamma { get; set; } = 2.2;
+}
+
+public sealed class BloomConfiguration
+{
+    public bool Enabled { get; set; } = true;
+    public double Threshold { get; set; } = 0.72;
+    public double Knee { get; set; } = 0.28;
+    public double Intensity { get; set; } = 0.32;
+    public double Radius { get; set; } = 7.0;
+    public double WideRadius { get; set; } = 20.0;
+    public double WideIntensity { get; set; } = 0.11;
+    public double NightBoost { get; set; } = 0.65;
+    public double Warmth { get; set; } = 0.12;
 }
 
 public sealed class CloudConfiguration

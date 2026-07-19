@@ -6,40 +6,34 @@ namespace TerraRenderer.Rendering.ToneMapping;
 
 internal static class EarthToneMapper
 {
-    public static SKColor Apply(SKColor color, EarthSurfaceMaterial material, ToneMappingConfiguration config)
+    // Material-aware grading happens before the frame-wide HDR pass. Exposure,
+    // highlight roll-off and display conversion are intentionally deferred to
+    // EarthPostProcessor so bloom and ACES operate on the complete image.
+    public static SKColor ApplySurfaceGrade(
+        SKColor color,
+        EarthSurfaceMaterial material,
+        ToneMappingConfiguration config)
     {
-        var r = ToLinear(color.Red / 255.0) * config.Exposure;
-        var g = ToLinear(color.Green / 255.0) * config.Exposure;
-        var b = ToLinear(color.Blue / 255.0) * config.Exposure;
+        var r = ToLinear(color.Red / 255.0);
+        var g = ToLinear(color.Green / 255.0);
+        var b = ToLinear(color.Blue / 255.0);
 
-        // Softer shoulder than the previous ACES-only pass. It preserves texture in ice and desert
-        // while keeping the image punchy on a small OLED display.
-        r = SoftFilmic(r, config.HighlightShoulder);
-        g = SoftFilmic(g, config.HighlightShoulder);
-        b = SoftFilmic(b, config.HighlightShoulder);
-
-        var luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        var luminance = Luminance(r, g, b);
         var shadowLift = config.ShadowLift * Math.Pow(1.0 - Math.Clamp(luminance, 0.0, 1.0), 2.2);
         r += shadowLift * 0.78;
         g += shadowLift * 0.90;
         b += shadowLift * 1.12;
 
-        luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        luminance = Luminance(r, g, b);
         r = luminance + (r - luminance) * config.Saturation;
         g = luminance + (g - luminance) * config.Saturation;
         b = luminance + (b - luminance) * config.Saturation;
-
-        r = 0.5 + (r - 0.5) * config.Contrast;
-        g = 0.5 + (g - 0.5) * config.Contrast;
-        b = 0.5 + (b - 0.5) * config.Contrast;
 
         if (material.Water > 0.20)
         {
             var water = material.Water;
             var boost = config.OceanBlueBoost * water;
             var darkening = config.OceanDarkening * water;
-
-            // Deep blue instead of cyan: suppress green slightly and retain blue luminance.
             r *= 1.0 - darkening - 0.52 * boost;
             g *= 1.0 - 0.26 * darkening - 0.10 * boost;
             b *= 1.0 - 0.05 * darkening + 0.82 * boost;
@@ -74,16 +68,15 @@ internal static class EarthToneMapper
             b = b * compression * suppression + config.IceBlueShadow * ice * (1.0 - luminance);
         }
 
-        return new SKColor(ToByte(ToSrgb(r) * 255.0), ToByte(ToSrgb(g) * 255.0),
-            ToByte(ToSrgb(b) * 255.0), 255);
+        return new SKColor(
+            ToByte(ToSrgb(r) * 255.0),
+            ToByte(ToSrgb(g) * 255.0),
+            ToByte(ToSrgb(b) * 255.0),
+            color.Alpha);
     }
 
-    private static double SoftFilmic(double value, double shoulder)
-    {
-        var x = Math.Max(0.0, value);
-        var mapped = x / (1.0 + shoulder * x);
-        return Math.Clamp(mapped, 0.0, 1.0);
-    }
+    private static double Luminance(double r, double g, double b) =>
+        0.2126 * r + 0.7152 * g + 0.0722 * b;
 
     private static double ToLinear(double x) =>
         x <= 0.04045 ? x / 12.92 : Math.Pow((x + 0.055) / 1.055, 2.4);

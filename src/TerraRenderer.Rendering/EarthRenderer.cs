@@ -41,7 +41,8 @@ public sealed class EarthRenderer
             RenderPerspective(working, atlas, renderLayout, request.Rendering, sun, request.TimeUtc);
 
         using var output = EarthPostProcessor.Finish(working, request.Layout.Width, request.Layout.Height,
-            request.Rendering.PostProcessing);
+            request.Rendering.PostProcessing, request.Rendering.ToneMapping, request.Rendering.Bloom,
+            request.Rendering.EnableToneMapping);
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputPath))!);
         using var image = SKImage.FromBitmap(output);
@@ -190,7 +191,7 @@ public sealed class EarthRenderer
         }
 
         return config.EnableToneMapping
-            ? EarthToneMapper.Apply(color, material, config.ToneMapping)
+            ? EarthToneMapper.ApplySurfaceGrade(color, material, config.ToneMapping)
             : color;
     }
 
