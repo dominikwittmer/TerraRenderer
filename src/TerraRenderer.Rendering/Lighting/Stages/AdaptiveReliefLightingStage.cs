@@ -69,8 +69,17 @@ internal sealed class AdaptiveReliefLightingStage : ILightingStage
         var adaptiveWeight = settings.Strength * landWeight * slopeWeight *
                              daylightWeight * materialWeight;
 
-        var darkening = valley * adaptiveWeight;
-        var brightening = (ridge + skyFill + bounce) * adaptiveWeight;
+        // Macro relief survives the downscale to 466 px. Elevation provides the broad mountain
+        // mass, AO supplies valley enclosure and Rock limits the effect to structurally useful land.
+        var normalizedHeight = SmoothStep(0.08, 0.72, terrain.Height);
+        var macro = settings.MacroReliefStrength * normalizedHeight *
+                    (0.40 + 0.60 * terrain.Rock) * daylightWeight * landWeight;
+        var rockContrast = settings.RockContrast * terrain.Rock * slopeWeight * directionalRelief;
+
+        var darkening = valley * adaptiveWeight + Math.Max(0.0, -rockContrast);
+        var brightening = (ridge + skyFill + bounce) * adaptiveWeight +
+                          macro * (0.45 + 0.55 * Math.Max(0.0, geometricLight)) +
+                          Math.Max(0.0, rockContrast);
         var factor = Math.Clamp(1.0 + brightening - darkening, 0.80, 1.20);
 
         // A very small blue bias in shadow fill suggests skylight without changing the

@@ -69,6 +69,12 @@ public sealed class RenderingConfiguration
     public double OceanSpecularStrength { get; set; } = 0.24;
     public double OceanSpecularPower { get; set; } = 82.0;
     public double OceanFresnelStrength { get; set; } = 0.20;
+    public double OceanDepthStrength { get; set; } = 0.16;
+    public double OceanShelfTint { get; set; } = 0.08;
+    public double OceanLimbDarkening { get; set; } = 0.10;
+    public double NightCoreStrength { get; set; } = 1.0;
+    public double NightBloomSoftness { get; set; } = 0.55;
+    public double NightAtmosphereStrength { get; set; } = 0.035;
     public AdaptiveReliefConfiguration AdaptiveRelief { get; set; } = new();
     public AtmosphereConfiguration Atmosphere { get; set; } = new();
     public ToneMappingConfiguration ToneMapping { get; set; } = new();
@@ -92,7 +98,13 @@ public sealed class AdaptiveReliefConfiguration
 
     // Global multiplier for the complete adaptive pass.
     public double Strength { get; set; } = 1.0;
+
+    // Uses elevation, AO and slope together to keep large mountain systems readable
+    // at watchface scale without amplifying flat regions.
+    public double MacroReliefStrength { get; set; } = 0.10;
+    public double RockContrast { get; set; } = 0.12;
 }
+
 
 public sealed class AtmosphereConfiguration
 {
@@ -105,7 +117,12 @@ public sealed class AtmosphereConfiguration
     public double SunsetWarmth { get; set; } = 0.12;
     public double RadialFalloff { get; set; } = 4.4;
     public double TerminatorWidth { get; set; } = 0.34;
+    public double LimbStrength { get; set; } = 0.24;
+    public double NightLimbStrength { get; set; } = 0.020;
+    public double HorizonGlowStrength { get; set; } = 0.30;
+    public double SunsetGlowStrength { get; set; } = 0.16;
 }
+
 
 public sealed class ToneMappingConfiguration
 {
