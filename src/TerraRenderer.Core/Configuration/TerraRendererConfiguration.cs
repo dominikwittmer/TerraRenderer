@@ -188,7 +188,9 @@ public sealed class CloudConfiguration
     public double SpeedDegreesPerHour { get; set; } = 0.45;
     public double DayBrightness { get; set; } = 0.72;
     public double SilverLining { get; set; } = 0.34;
-    public double ShadowStrength { get; set; } = 0.13;
+    public double ShadowStrength { get; set; } = 0.16;
+    public double ShadowOffsetDegrees { get; set; } = 0.42;
+    public double ForwardScattering { get; set; } = 0.22;
     public double NightVisibility { get; set; } = 0.055;
 }
 
@@ -197,6 +199,9 @@ public sealed class PostProcessingConfiguration
     public int Supersampling { get; set; } = 1;
     public double SharpenStrength { get; set; } = 0.34;
     public double LocalContrast { get; set; } = 0.08;
-    public double DaylightStructure { get; set; } = 0.16;
+    public double DaylightStructure { get; set; } = 0.14;
     public int DaylightStructureRadius { get; set; } = 5;
+    public double FineDetailStrength { get; set; } = 0.28;
+    public int FineDetailRadius { get; set; } = 2;
+    public double EdgeProtection { get; set; } = 0.62;
 }

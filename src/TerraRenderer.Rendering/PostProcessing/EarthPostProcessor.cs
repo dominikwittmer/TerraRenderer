@@ -77,7 +77,8 @@ internal static class EarthPostProcessor
         var height = source.Height;
         var count = width * height;
         var luminance = new float[count];
-        var blurred = new float[count];
+        var fineBlur = new float[count];
+        var broadBlur = new float[count];
 
         for (var y = 0; y < height; y++)
         for (var x = 0; x < width; x++)
@@ -86,9 +87,10 @@ internal static class EarthPostProcessor
             luminance[y * width + x] = (float)(0.2126 * c.Red + 0.7152 * c.Green + 0.0722 * c.Blue);
         }
 
-        Array.Copy(luminance, blurred, count);
-        var structureRadius = Math.Clamp(post.DaylightStructureRadius, 2, 16);
-        BoxBlur(blurred, width, height, structureRadius, 1);
+        Array.Copy(luminance, fineBlur, count);
+        Array.Copy(luminance, broadBlur, count);
+        BoxBlur(fineBlur, width, height, Math.Clamp(post.FineDetailRadius, 1, 4), 1);
+        BoxBlur(broadBlur, width, height, Math.Clamp(post.DaylightStructureRadius, 2, 16), 1);
 
         var output = new SKBitmap(source.Info);
         for (var y = 0; y < height; y++)
@@ -100,31 +102,30 @@ internal static class EarthPostProcessor
             for (var xx = Math.Max(0, x - 1); xx <= Math.Min(width - 1, x + 1); xx++)
             {
                 var p = source.GetPixel(xx, yy);
-                ar += p.Red;
-                ag += p.Green;
-                ab += p.Blue;
-                n++;
+                ar += p.Red; ag += p.Green; ab += p.Blue; n++;
             }
-
-            ar /= n;
-            ag /= n;
-            ab /= n;
+            ar /= n; ag /= n; ab /= n;
 
             var i = y * width + x;
             var lum = luminance[i];
-            var local = (lum - (0.2126 * ar + 0.7152 * ag + 0.0722 * ab)) * post.LocalContrast;
+            var daylightMask = SmoothStep(24.0, 108.0, lum);
+            var highlightProtection = 1.0 - SmoothStep(198.0, 246.0, lum);
+            var blackProtection = SmoothStep(8.0, 34.0, lum);
 
-            // The structure pass is luminance-only and fades out in very dark pixels.
-            // That preserves Sprint 4's night lights while recovering broad terrain,
-            // cloud and ice detail on the illuminated hemisphere.
-            var daylightMask = SmoothStep(22.0, 105.0, lum);
-            var highlightProtection = 1.0 - SmoothStep(205.0, 250.0, lum);
-            var structure = (lum - blurred[i]) * post.DaylightStructure * daylightMask * highlightProtection;
+            // Strong edges are protected to avoid halos around coastlines, clouds and the limb.
+            var edgeMagnitude = Math.Abs(lum - fineBlur[i]);
+            var edgeProtection = 1.0 - post.EdgeProtection * SmoothStep(10.0, 34.0, edgeMagnitude);
+            var mask = daylightMask * highlightProtection * blackProtection * edgeProtection;
+
+            var local = (lum - (0.2126 * ar + 0.7152 * ag + 0.0722 * ab)) * post.LocalContrast * mask;
+            var fine = (lum - fineBlur[i]) * post.FineDetailStrength * mask;
+            var broad = (lum - broadBlur[i]) * post.DaylightStructure * mask;
+            var detail = local + fine + broad;
 
             output.SetPixel(x, y, new SKColor(
-                ToByte(c.Red + (c.Red - ar) * post.SharpenStrength + local + structure),
-                ToByte(c.Green + (c.Green - ag) * post.SharpenStrength + local + structure),
-                ToByte(c.Blue + (c.Blue - ab) * post.SharpenStrength + local + structure),
+                ToByte(c.Red + (c.Red - ar) * post.SharpenStrength * mask + detail),
+                ToByte(c.Green + (c.Green - ag) * post.SharpenStrength * mask + detail),
+                ToByte(c.Blue + (c.Blue - ab) * post.SharpenStrength * mask + detail),
                 255));
         }
 
