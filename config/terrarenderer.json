@@ -67,6 +67,14 @@
     "oceanSpecularStrength": 0.14,
     "oceanSpecularPower": 105.0,
     "oceanFresnelStrength": 0.13,
+    "adaptiveRelief": {
+      "enabled": true,
+      "ridgeStrength": 0.18,
+      "valleyStrength": 0.12,
+      "skyLight": 0.035,
+      "ambientBounce": 0.012,
+      "strength": 1.0
+    },
     "atmosphere": {
       "thickness": 0.013,
       "rayleighStrength": 0.28,

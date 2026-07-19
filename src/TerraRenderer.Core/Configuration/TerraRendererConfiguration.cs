@@ -69,8 +69,29 @@ public sealed class RenderingConfiguration
     public double OceanSpecularStrength { get; set; } = 0.24;
     public double OceanSpecularPower { get; set; } = 82.0;
     public double OceanFresnelStrength { get; set; } = 0.20;
+    public AdaptiveReliefConfiguration AdaptiveRelief { get; set; } = new();
     public AtmosphereConfiguration Atmosphere { get; set; } = new();
     public ToneMappingConfiguration ToneMapping { get; set; } = new();
+}
+
+public sealed class AdaptiveReliefConfiguration
+{
+    public bool Enabled { get; set; } = true;
+
+    // Brightens sun-facing micro-relief. Kept deliberately subtle for a 466 px watchface.
+    public double RidgeStrength { get; set; } = 0.18;
+
+    // Deepens lee slopes and terrain with low ambient openness.
+    public double ValleyStrength { get; set; } = 0.12;
+
+    // Adds cool diffuse light to relief that is turned away from the sun.
+    public double SkyLight { get; set; } = 0.035;
+
+    // Small neutral lift that prevents mountain shadows from becoming blocked.
+    public double AmbientBounce { get; set; } = 0.012;
+
+    // Global multiplier for the complete adaptive pass.
+    public double Strength { get; set; } = 1.0;
 }
 
 public sealed class AtmosphereConfiguration

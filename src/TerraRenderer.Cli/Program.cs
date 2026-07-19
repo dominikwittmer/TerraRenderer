@@ -24,8 +24,19 @@ try
     Console.WriteLine($"Konfiguration: {configPath}");
     Console.WriteLine($"Datum: {date:yyyy-MM-dd} UTC");
     Console.WriteLine($"Echtes Höhenmodell: {(atlas.UsesElevationTexture ? "ja" : "nein (Fallback)")}");
-    Console.WriteLine($"Separate Wassermaske: {(atlas.UsesWaterMaskTexture ? "ja" : "nein (Fallback)")}");
-    Console.WriteLine($"Separate Eismaske: {(atlas.UsesIceMaskTexture ? "ja" : "nein (Fallback)")}");
+    Console.WriteLine(
+        $"Wasserdaten: {(atlas.UsesMaterialTexture
+            ? "ja (Materialtextur)"
+            : atlas.UsesWaterMaskTexture
+                ? "ja (separate Maske)"
+                : "nein (Farberkennung/Fallback)")}");
+
+    Console.WriteLine(
+        $"Eisdaten: {(atlas.UsesMaterialTexture
+            ? "ja (Materialtextur)"
+            : atlas.UsesIceMaskTexture
+                ? "ja (separate Maske)"
+                : "nein (Farberkennung/Fallback)")}");
 
     foreach (var layout in SelectLayouts(configuration, requestedLayout))
     {
