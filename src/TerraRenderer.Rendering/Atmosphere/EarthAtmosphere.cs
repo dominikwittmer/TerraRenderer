@@ -9,48 +9,62 @@ internal static class EarthAtmosphere
     {
         var altitude = Math.Clamp(normalizedAltitude, 0.0, 1.0);
         var shell = Math.Pow(1.0 - altitude, config.RadialFalloff);
-        var daylight = config.NightSideStrength +
-                       (1.0 - config.NightSideStrength) * SmoothStep(-0.30, 0.52, edgeLight);
-        var terminator = Math.Exp(-Math.Pow(edgeLight / config.TerminatorWidth, 2.0));
-        var forward = Math.Pow(SmoothStep(-0.10, 0.86, edgeLight), 2.0);
 
-        var horizon = shell * config.HorizonGlowStrength;
-        var rayleigh = shell * daylight *
-                       (1.0 + config.TerminatorBoost * terminator) * config.RayleighStrength;
-        var mie = Math.Pow(shell, 4.2) * forward * config.MieStrength;
-        var sunset = shell * terminator * SmoothStep(-0.20, 0.20, edgeLight) *
-                     config.SunsetWarmth * config.SunsetGlowStrength;
-        var night = Math.Pow(shell, 2.2) * (1.0 - daylight) * config.NightLimbStrength;
+        var day = SmoothStep(-0.34, 0.56, edgeLight);
+        var terminator = Math.Exp(-Math.Pow(edgeLight / Math.Max(0.04, config.TerminatorWidth), 2.0));
+        var sunward = SmoothStep(-0.12, 0.90, edgeLight);
+        var forward = Math.Pow(sunward, Math.Max(1.0, config.ForwardScatterPower));
+        var night = 1.0 - day;
+
+        var rayleigh = shell * (config.NightSideStrength + day)
+            * (1.0 + config.TerminatorBoost * terminator) * config.RayleighStrength;
+        var mie = Math.Pow(shell, 3.7) * forward
+            * config.MieStrength * (1.0 + config.ForwardScatterStrength);
+        var horizon = shell * config.HorizonGlowStrength * (0.24 + 0.76 * day);
+        var sunset = shell * terminator * SmoothStep(-0.24, 0.18, edgeLight)
+            * config.SunsetWarmth * config.SunsetGlowStrength * config.GoldenHourStrength;
+        var purple = shell * terminator * night * config.TwilightPurpleStrength;
+        var nightRim = Math.Pow(shell, 2.3) * night * config.NightLimbStrength;
 
         return new SKColor(
-            ToByte(116 * rayleigh + 185 * mie + 58 * horizon + 255 * sunset + 28 * night),
-            ToByte(174 * rayleigh + 190 * mie + 105 * horizon + 112 * sunset + 46 * night),
-            ToByte(242 * rayleigh + 202 * mie + 188 * horizon + 28 * sunset + 92 * night), 255);
+            ToByte(104 * rayleigh + 244 * mie + 66 * horizon + 255 * sunset + 96 * purple + 24 * nightRim),
+            ToByte(168 * rayleigh + 214 * mie + 112 * horizon + 132 * sunset + 64 * purple + 46 * nightRim),
+            ToByte(255 * rayleigh + 190 * mie + 206 * horizon + 28 * sunset + 138 * purple + 104 * nightRim),
+            255);
     }
 
-    public static SKColor ApplySurfaceHaze(SKColor color, double sphereZ, double surfaceLight,
+    public static SKColor ApplySurfaceHaze(
+        SKColor color,
+        double sphereZ,
+        double surfaceLight,
         AtmosphereConfiguration config)
     {
         var mu = Math.Clamp(sphereZ, 0.0, 1.0);
-        var limb = Math.Pow(1.0 - mu, 3.15);
-        var daylight = config.NightSideStrength +
-                       (1.0 - config.NightSideStrength) * SmoothStep(-0.28, 0.54, surfaceLight);
-        var terminator = Math.Exp(-Math.Pow(surfaceLight / config.TerminatorWidth, 2.0));
+        var limb = Math.Pow(1.0 - mu, 3.0);
+        var day = SmoothStep(-0.30, 0.54, surfaceLight);
+        var night = 1.0 - day;
+        var terminator = Math.Exp(-Math.Pow(surfaceLight / Math.Max(0.04, config.TerminatorWidth), 2.0));
+        var forward = Math.Pow(SmoothStep(-0.08, 0.92, surfaceLight), Math.Max(1.0, config.ForwardScatterPower));
 
-        var dayAmount = limb * daylight * config.SurfaceHazeStrength;
-        var limbAmount = limb * config.LimbStrength * (0.30 + 0.70 * daylight);
-        var nightAmount = limb * (1.0 - daylight) * config.NightLimbStrength;
-        var sunGlare = Math.Pow(Math.Max(0.0, surfaceLight), 4.0) * limb *
-                       config.HorizonGlowStrength * 0.12;
-        var amount = Math.Clamp(dayAmount + limbAmount + nightAmount, 0.0, 0.28);
+        var blueAmount = limb * (0.28 + 0.72 * day)
+            * (config.SurfaceHazeStrength + config.LimbStrength);
+        var warmAmount = limb * terminator * config.SunsetGlowStrength
+            * config.GoldenHourStrength * (0.55 + 0.45 * SmoothStep(-0.25, 0.15, surfaceLight));
+        var forwardAmount = limb * forward * config.MieStrength * config.ForwardScatterStrength;
+        var purpleAmount = limb * terminator * night * config.TwilightPurpleStrength;
+        var nightAmount = limb * night * config.NightLimbStrength;
 
-        var sunset = terminator * config.SunsetWarmth * config.SunsetGlowStrength;
-        var haze = new SKColor(
-            ToByte(142 + 103 * sunset),
-            ToByte(188 + 46 * sunset),
-            ToByte(238 - 72 * sunset), 255);
+        var blueHaze = new SKColor(116, 184, 255, 255);
+        var warmHaze = new SKColor(255, 151, 52, 255);
+        var forwardHaze = new SKColor(255, 222, 176, 255);
+        var purpleHaze = new SKColor(116, 74, 170, 255);
+        var nightHaze = new SKColor(34, 78, 146, 255);
 
-        return ScreenMix(color, haze, amount);
+        var result = ScreenMix(color, blueHaze, Math.Clamp(blueAmount, 0.0, 0.24));
+        result = ScreenMix(result, warmHaze, Math.Clamp(warmAmount, 0.0, 0.30));
+        result = ScreenMix(result, forwardHaze, Math.Clamp(forwardAmount, 0.0, 0.18));
+        result = ScreenMix(result, purpleHaze, Math.Clamp(purpleAmount, 0.0, 0.12));
+        return ScreenMix(result, nightHaze, Math.Clamp(nightAmount, 0.0, 0.08));
     }
 
     private static SKColor ScreenMix(SKColor baseColor, SKColor haze, double amount)
@@ -59,7 +73,8 @@ internal static class EarthAtmosphere
         return new SKColor(
             ToByte(baseColor.Red + (Screen(baseColor.Red, haze.Red) - baseColor.Red) * amount),
             ToByte(baseColor.Green + (Screen(baseColor.Green, haze.Green) - baseColor.Green) * amount),
-            ToByte(baseColor.Blue + (Screen(baseColor.Blue, haze.Blue) - baseColor.Blue) * amount), 255);
+            ToByte(baseColor.Blue + (Screen(baseColor.Blue, haze.Blue) - baseColor.Blue) * amount),
+            255);
     }
 
     private static byte ToByte(double value) => (byte)Math.Clamp(Math.Round(value), 0, 255);

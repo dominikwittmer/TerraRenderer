@@ -77,6 +77,10 @@ public sealed class RenderingConfiguration
     public double NightCoreStrength { get; set; } = 1.0;
     public double NightBloomSoftness { get; set; } = 0.55;
     public double NightAtmosphereStrength { get; set; } = 0.035;
+    public double NightWhiteCore { get; set; } = 0.82;
+    public double NightWarmth { get; set; } = 0.34;
+    public double NightHaloStrength { get; set; } = 0.72;
+    public double NightCompression { get; set; } = 0.64;
     public AdaptiveReliefConfiguration AdaptiveRelief { get; set; } = new();
     public CloudConfiguration Clouds { get; set; } = new();
     public PostProcessingConfiguration PostProcessing { get; set; } = new();
@@ -126,6 +130,10 @@ public sealed class AtmosphereConfiguration
     public double NightLimbStrength { get; set; } = 0.020;
     public double HorizonGlowStrength { get; set; } = 0.30;
     public double SunsetGlowStrength { get; set; } = 0.16;
+    public double ForwardScatterStrength { get; set; } = 0.36;
+    public double ForwardScatterPower { get; set; } = 8.0;
+    public double TwilightPurpleStrength { get; set; } = 0.10;
+    public double GoldenHourStrength { get; set; } = 0.34;
 }
 
 

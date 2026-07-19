@@ -7,8 +7,14 @@ namespace TerraRenderer.Rendering.Lighting;
 
 internal static class SurfaceLighting
 {
-    public static SKColor Shade(EarthSurfaceMaterial material, SKColor emissionGlow, Vector3d normal,
-        Vector3d geometricNormal, Vector3d sun, Vector3d view, RenderingConfiguration config)
+    public static SKColor Shade(
+        EarthSurfaceMaterial material,
+        SKColor emissionGlow,
+        Vector3d normal,
+        Vector3d geometricNormal,
+        Vector3d sun,
+        Vector3d view,
+        RenderingConfiguration config)
     {
         var illumination = Vector3d.Dot(normal, sun);
         var geometricIllumination = Vector3d.Dot(geometricNormal, sun);
@@ -20,22 +26,20 @@ internal static class SurfaceLighting
         var hemisphere = config.HemisphereLight * (0.62 + 0.38 * skyHemisphere);
         var baseLight = config.AmbientLight + hemisphere;
         var diffuse = baseLight + (1.0 - baseLight) * directLight;
-        diffuse = Math.Min(diffuse, 1.42);
+        diffuse = Math.Min(diffuse, 1.48);
 
         var twilightBand = Math.Exp(-Math.Pow(geometricIllumination / config.TwilightBandWidth, 2.0));
         var twilightLift = config.TwilightSurfaceLift * twilightBand * (1.0 - 0.72 * dayMix);
         var ao = 1.0 - config.AmbientOcclusionStrength * (1.0 - material.AmbientOcclusion);
+
         var day = Scale(material.Albedo, diffuse * (0.18 + 0.82 * dayMix) * ao);
         day = Add(day,
-            24.0 * twilightLift * (1.0 - material.Water),
+            28.0 * twilightLift * (1.0 - material.Water),
             37.0 * twilightLift,
-            58.0 * twilightLift);
+            56.0 * twilightLift);
 
         if (material.Water > 0.01)
         {
-            // The source albedo already contains bathymetric colour. These restrained terms
-            // add depth, continental-shelf colour and a darker grazing-angle ocean without
-            // creating a glossy game-engine appearance.
             var water = Math.Clamp(material.Water, 0.0, 1.0);
             var luminance = Luminance(material.Albedo);
             var deepWater = water * SmoothStep(0.05, 0.42, 0.38 - luminance);
@@ -56,47 +60,56 @@ internal static class SurfaceLighting
             var ndoth = Math.Max(0.0, Vector3d.Dot(normal, halfVector));
             var specular = Math.Pow(ndoth, config.OceanSpecularPower);
             var fresnel = 0.014 + config.OceanFresnelStrength * Math.Pow(1.0 - ndotv, 5.0);
-            var strength = (specular * config.OceanSpecularStrength * config.SunLightStrength + fresnel * 0.11) *
-                           dayMix * material.Water * Math.Max(0.0, illumination);
-            day = Add(day, 136 * strength, 178 * strength, 232 * strength);
+            var strength = (specular * config.OceanSpecularStrength * config.SunLightStrength + fresnel * 0.11)
+                * dayMix * material.Water * Math.Max(0.0, illumination);
+            day = Add(day, 148 * strength, 184 * strength, 234 * strength);
         }
 
         var nightMask = config.EnableNightLights
-            ? Math.Pow(1.0 - SmoothStep(-config.NightLightFadeWidth, config.NightLightFadeWidth,
-                geometricIllumination), config.NightLightFadePower)
+            ? Math.Pow(1.0 - SmoothStep(-config.NightLightFadeWidth, config.NightLightFadeWidth, geometricIllumination), config.NightLightFadePower)
             : 0.0;
+
         var glowSource = material.Bloom.Red > 0 || material.Bloom.Green > 0 || material.Bloom.Blue > 0
             ? material.Bloom
             : emissionGlow;
-        var night = WarmEmission(material.Emission, glowSource,
-            config.NightLightStrength * config.NightCoreStrength * nightMask,
-            config.NightLightGlow, config.NightBloomSoftness);
 
-        // A tiny blue atmospheric floor keeps the night hemisphere from becoming an empty disk,
-        // while still remaining OLED-friendly and much darker than twilight.
-        var nightAtmosphere = config.NightAtmosphereStrength * nightMask *
-                              (0.35 + 0.65 * Math.Pow(1.0 - ndotv, 1.8));
-        day = Add(day, 3.0 * nightAtmosphere, 7.0 * nightAtmosphere, 18.0 * nightAtmosphere);
+        var night = CinematicEmission(material.Emission, glowSource, nightMask, config);
+
+        var nightAtmosphere = config.NightAtmosphereStrength * nightMask
+            * (0.30 + 0.70 * Math.Pow(1.0 - ndotv, 1.8));
+        day = Add(day, 2.0 * nightAtmosphere, 6.0 * nightAtmosphere, 18.0 * nightAtmosphere);
 
         return Add(day, night);
     }
 
-    private static SKColor WarmEmission(SKColor coreColor, SKColor glowColor, double factor, double glow,
-        double softness)
+    private static SKColor CinematicEmission(
+        SKColor coreColor,
+        SKColor glowColor,
+        double nightMask,
+        RenderingConfiguration config)
     {
-        var coreLuminance = Luminance(coreColor);
-        var glowLuminance = Luminance(glowColor);
-        var coreExponent = 1.85 - 0.45 * Math.Clamp(softness, 0.0, 1.0);
-        var haloExponent = 0.86 - 0.28 * Math.Clamp(softness, 0.0, 1.0);
+        var source = Math.Max(Luminance(coreColor), 0.92 * Luminance(glowColor));
+        if (source <= 0.00001 || nightMask <= 0.00001)
+            return SKColors.Black;
 
-        var core = Math.Pow(coreLuminance, coreExponent) * factor;
-        var mid = Math.Pow(coreLuminance, 0.94) * factor * 0.22;
-        var halo = Math.Pow(glowLuminance, haloExponent) * factor * glow * 0.34;
+        var compression = Math.Clamp(config.NightCompression, 0.15, 1.5);
+        var normalized = 1.0 - Math.Exp(-source * (3.4 + 4.2 * compression));
+        var factor = config.NightLightStrength * config.NightCoreStrength * nightMask;
 
-        return new SKColor(
-            ToByte(255.0 * core + 232.0 * mid + 244.0 * halo),
-            ToByte(142.0 * core + 101.0 * mid + 105.0 * halo),
-            ToByte(34.0 * core + 24.0 * mid + 22.0 * halo), 255);
+        var core = Math.Pow(normalized, 2.15 - 0.55 * config.NightBloomSoftness) * factor;
+        var mid = Math.Pow(normalized, 0.92) * factor * 0.52;
+        var halo = Math.Pow(Math.Max(Luminance(glowColor), source), 0.58) * factor
+            * config.NightLightGlow * config.NightHaloStrength;
+
+        var whiteCore = Math.Clamp(config.NightWhiteCore, 0.0, 1.0);
+        var warmth = Math.Clamp(config.NightWarmth, 0.0, 1.0);
+
+        // Dense city centres approach neutral white. Their surrounding halo stays warm.
+        var r = 255.0 * core + (236.0 + 19.0 * warmth) * mid + (238.0 + 17.0 * warmth) * halo;
+        var g = (190.0 + 65.0 * whiteCore) * core + (184.0 + 52.0 * whiteCore) * mid + (154.0 + 62.0 * whiteCore) * halo;
+        var b = (116.0 + 139.0 * whiteCore) * core + (92.0 + 124.0 * whiteCore) * mid + (58.0 + 92.0 * whiteCore) * halo;
+
+        return new SKColor(ToByte(r), ToByte(g), ToByte(b), 255);
     }
 
     private static double Luminance(SKColor color) =>
@@ -108,7 +121,8 @@ internal static class SurfaceLighting
         new(ToByte(color.Red * factor), ToByte(color.Green * factor), ToByte(color.Blue * factor), 255);
 
     private static SKColor Add(SKColor a, SKColor b) =>
-        new((byte)Math.Min(255, a.Red + b.Red), (byte)Math.Min(255, a.Green + b.Green),
+        new((byte)Math.Min(255, a.Red + b.Red),
+            (byte)Math.Min(255, a.Green + b.Green),
             (byte)Math.Min(255, a.Blue + b.Blue), 255);
 
     private static SKColor Add(SKColor color, double r, double g, double b) =>
